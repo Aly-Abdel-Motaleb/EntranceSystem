@@ -1,0 +1,13 @@
+model = load("data/trained_model.pkl", mmap_mode="r")
+data = []
+result = []
+car_letters = sorted(car_letters ,key=lambda x: x[1], reverse = True)
+for i in car_letters:
+    img = cv.resize(i[0],(32,64))
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    describtor= hog(gray,orientations=9,pixels_per_cell=(8,8), cells_per_block=(1, 1))
+    data.append((describtor).flatten())
+
+df_test = pd.DataFrame(data)
+df_test = df_test.dropna(axis=1)
+print(model.predict(df_test))

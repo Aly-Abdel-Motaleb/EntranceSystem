@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            color: #333;
+            size: 40px;
+            margin-bottom: 70px;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        /* Styled file input */
+        input[type="file"] {
+            display: none;
+        }
+
+        label.file-input-label {
+            background-color: #343541;
+            color: #fff;
+            padding: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        label.file-input-label:hover {
+            background-color: #262730;
+        }
+
+
+        button {
+            background-color: #4caf50;
+            color: #fff;
+            padding: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #images-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        #result {
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            height: min-content;
+        }
+
+        #original-image img {
+            max-width: 40%; /* Adjust the size as needed */
+            height: auto;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        #letters {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            padding: 10px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            height: min-content;
+        }
+
+        #letters_span {
+            font-size: 18px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Upload</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <!-- Hidden file input -->
+        <input type="file" name="file" id="fileInput" />
+        <!-- Styled label as file input button -->
+        <label for="fileInput" class="file-input-label">Choose File</label>
+        <button type="button" onclick="uploadImage()">Upload</button>
+    </form>
+    <div id="images-container">
+        <div id="original-image"></div>
+        <div id="result"></div>
+        <div id="letters">
+            <span id="letters_span"></span>
+        </div>
+    </div>
+    
+    <script>
+        function uploadImage() {
+            var letterMapping = {
+                '1': '١',
+                '2': '٢',
+                '3': '٣',
+                '4': '٤',
+                '5': '٥',
+                '6': '٦',
+                '7': '٧',
+                '8': '٨',
+                '9': '٩',
+                'aen': 'ع',
+                'alf': 'أ',
+                "ba'": 'ب',
+                'dal': 'د',
+                "fa'": 'ف',
+                'gem': 'ج',
+                "ha'": 'ه',
+                'lam' : 'ل',
+                'Mem' : 'م',
+                'noon' : 'ن',
+                'qaf' : 'ق',
+                "ra'" : 'ر',
+                'sad' : 'ص',
+                'seen' : 'س',
+                "ta'" : 'ط',
+                'waw' : 'و',
+                "ya'" : 'ي',
+            };
+
+            var fileInput = document.getElementById('fileInput');
+            var file = fileInput.files[0];
+    
+            var formData = new FormData();
+            formData.append('file', file);
+            
+            var originalImageDiv = document.getElementById('original-image');
+            var originalImage = document.createElement('img');
+            originalImage.src = URL.createObjectURL(file);
+            originalImage.alt = 'Original Image';
+            originalImageDiv.innerHTML = ''; // Clear previous original image
+            originalImageDiv.appendChild(originalImage);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+    
+                // Clear previous results
+                var resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = '';
+    
+                // Display the processed image if available
+                if (data.plate_image) {
+                    var imgElement = document.createElement('img');
+                    var decodedImageData = atob(data.plate_image);
+                    var uint8Array = new Uint8Array(decodedImageData.length);
+                    for (var i = 0; i < decodedImageData.length; i++) {
+                        uint8Array[i] = decodedImageData.charCodeAt(i);
+                    }
+                    var blob = new Blob([uint8Array], { type: 'image/jpeg' });
+                    var imageUrl = URL.createObjectURL(blob);
+                    imgElement.src = imageUrl;
+                    resultDiv.appendChild(imgElement);
+                }
+                
+                // Display the array of letters
+                var lettersDiv = document.getElementById('letters_span');
+                var lettersArray = data.result;
+    
+                var wordsArray = lettersArray.map(letter => {
+                    // Use the mapping object to get the word for the current letter
+                    return letterMapping[letter] || letter;
+                });
+                
+                // Now, display all words in a single span
+                if (wordsArray && wordsArray.length > 0) {
+                    var allWords = wordsArray.join(' ');
+                    letters_span.textContent = allWords;
+                }
+                else {
+                    var allWords = 'No letters found';
+                    letters_span.textContent = allWords;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

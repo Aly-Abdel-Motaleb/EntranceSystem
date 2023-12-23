@@ -1,6 +1,6 @@
 
 
-import skimage.io as io
+# import skimage.io as io
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage.exposure import histogram

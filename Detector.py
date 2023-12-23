@@ -9,7 +9,7 @@ from skimage.filters import threshold_local
 from skimage import measure
 from skimage.feature import hog
 import os
-import requests
+# import requests
 
 
 
@@ -97,9 +97,6 @@ def agglomerative_cluster_y(contours, threshold_distance=5):
             break
 
     return current_contours
-
-
-    
 
 def LPD(img):
     # Step 1: Edge Detection
@@ -204,12 +201,16 @@ def LPD(img):
             # print(f"area:{area}")
             if (ar>=1.5 and ar<=6):
                 # print(f"Ar:{ar}")
-                cropped_image = img[y -6 :y + h + 5, x:x + w]
+                if ( y == 0):
+                    cropped_image = img[y :y + h + 5, x:x + w]
+                else:
+                    cropped_image = img[y -6 :y + h + 5, x:x + w]
 #                 cv.drawContours(img,cnt,-1,(0,255,0),2)
                 
                 # show_images([img,cropped_image])
                 return cropped_image
     return cropped_image
+    
 
 def enhance_plate(plate_img):
     if (np.all(plate_img == 0)):
@@ -271,8 +272,8 @@ def enhance_plate(plate_img):
     # show_images([black_image,white_image])      
     morph_kern = cv.getStructuringElement(cv.MORPH_RECT, (1,3))
     dilated = cv.dilate(black_image,morph_kern,iterations=2)
-    # show_images([dilated,plate_img])
     return [dilated,plate_img]
+
     
     
 
@@ -309,11 +310,11 @@ def merge_intersecting_contours(contours):
     return merged_contours
 
 
-flag = 0
-car_letters = []
+
+
 def extractChars(img):  
         if (img == []):
-            return 
+            return img
         filteredCnts = []
         closeKern = cv.getStructuringElement(cv.MORPH_RECT, (1,3))
         img[0] = cv.dilate(img[0], closeKern, iterations = 1)
@@ -374,6 +375,7 @@ def extractChars(img):
         
         filteredCnts = agglomerative_cluster_y(filteredCnts)  
         filteredCnts = merge_intersecting_contours(filteredCnts) 
+        filteredCnts = agglomerative_cluster(filteredCnts, threshold_distance=2)
         for cnt in filteredCnts:
             (boxX, boxY, boxW, boxH) = cv.boundingRect(cnt)
             cropped_image = img[1].copy()[boxY:boxY + boxH, boxX:boxX + boxW]
@@ -382,50 +384,55 @@ def extractChars(img):
         
         # merge contoure which is close together in y axis
         
-        
+        flag = 0
         
         if (len(car_letters) >= 2 and len(car_letters) <=7):
-            print("valid car")
             flag = 1 
         else:
-            print("There is no car")
             print(len(car_letters))
             flag = 0
         
         cv.line(img[1], (0,img[1].shape[0]//2), ((img[1].shape[1],img[1].shape[0]//2,)), (255,0,0), 1)
         cv.line(white, (0,white.shape[0]//2), ((white.shape[1],white.shape[0]//2,)), (255,0,0), 1)
-        show_images([img[1],white])
+        # show_images([img[1],white])
+        return [img[1],flag]
 
-def download_image(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        img = cv.imdecode(np.frombuffer(response.content, np.uint8), cv.IMREAD_COLOR)
-        return img
-    else:
-        print(f"Failed to download image from {url}")
-        return None
+# def download_image(url):
+#     response = requests.get(url)
+#     if response.status_code == 200:
+#         img = cv.imdecode(np.frombuffer(response.content, np.uint8), cv.IMREAD_COLOR)
+#         return img
+#     else:
+#         print(f"Failed to download image from {url}")
+#         return None
 
 # Replace 'your_image_url' with the actual URL of the image you want to process
-    image_url = '...'
-    img = download_image(image_url)
 
-if img is not None:
-    extractChars(enhance_plate(LPD(cv.imread(img))))
+def process_image(image):
+    global car_letters
+    car_letters = []
+    car_image = np.array(image)
+    car_plate , flag = extractChars(enhance_plate(LPD(car_image)))
+    car_plate = np.array(car_plate)
+    result = []
     if flag == 1:
         model = load("data/trained_model.pkl", mmap_mode="r")
         data = []
-        result = []
         car_letters = sorted(car_letters ,key=lambda x: x[1], reverse = True)
         for i in car_letters:
-            img = cv.resize(i[0],(32,64))
-            gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+            car_image = cv.resize(i[0],(32,64))
+            gray = cv.cvtColor(car_image, cv.COLOR_BGR2GRAY)
             describtor= hog(gray,orientations=9,pixels_per_cell=(8,8), cells_per_block=(1, 1))
             data.append((describtor).flatten())
-
         df_test = pd.DataFrame(data)
         df_test = df_test.dropna(axis=1)
-        print(model.predict(df_test))
+        result = model.predict(df_test)
+        print(result)
         flag = 0
         car_letters = []
     else: 
-        print("There is no car")
+        result = []
+    
+    return [car_plate,result]
+
+

@@ -156,9 +156,7 @@ def LPD(img):
     dilated_2[ dilated_2 >= 140 ] = 255
     
     eroded_3 = cv.erode(dilated_2, None, iterations = 2)
-    # print(ratio)
     if ratio >=0.01:
-        # print("*"*100)
         erodekern = cv.getStructuringElement(cv.MORPH_RECT, (3,3))
         eroded_3 = cv.erode(eroded_3,erodekern,iterations = 2)
         
@@ -180,7 +178,6 @@ def LPD(img):
     
     img_cont = img.copy()
     cv.drawContours(img_cont,cnts,-1, (0, 255, 0), 2)
-#     show_images([final_img])
     cropped_image = np.zeros_like(img)
     for cnt in cnts:
 
@@ -198,16 +195,12 @@ def LPD(img):
             approx = cv.approxPolyDP(cnt, 0.02 * peri, True)
             x, y, w, h = cv.boundingRect(approx)
             ar = w / float(h)
-            # print(f"area:{area}")
             if (ar>=1.5 and ar<=6):
-                # print(f"Ar:{ar}")
                 if ( y == 0):
                     cropped_image = img[y :y + h + 5, x:x + w]
                 else:
                     cropped_image = img[y -6 :y + h + 5, x:x + w]
-#                 cv.drawContours(img,cnt,-1,(0,255,0),2)
                 
-                # show_images([img,cropped_image])
                 return cropped_image
     return cropped_image
     
@@ -231,7 +224,6 @@ def enhance_plate(plate_img):
     labels = measure.label(inverted_image, background = 0)
     
  
-    # show_images([inverted_image])
     
     # loop over the unique components
     black_image = np.zeros(inverted_image.shape, dtype ='uint8')
@@ -254,7 +246,6 @@ def enhance_plate(plate_img):
         
         cnts = cnts[1] if imutils.is_cv3() else cnts[0] # for cv2 and cv3
         
-        #    and solidity < 0.80
         
         if len(cnts) > 0:
                 c = max(cnts, key = cv.contourArea)
@@ -319,7 +310,6 @@ def extractChars(img):
         closeKern = cv.getStructuringElement(cv.MORPH_RECT, (1,3))
         img[0] = cv.dilate(img[0], closeKern, iterations = 1)
         
-        # show_images([img[0],img[1]])
         labels = measure.label(img[0], background = 0)
         white = img[1].copy()
         for idx,label in enumerate(np.unique(labels)):
@@ -360,15 +350,9 @@ def extractChars(img):
                 
                 cv.rectangle( white, (boxX, boxY), (boxX + boxW, boxY + boxH), (0, 255, 0), 1)
                 
-                # keepAspectRatio  and  
                 if areaRatio and solidity < 0.8:
                     if((center_line > boxY and center_line < boxY+boxH) or (center_line<=boxY) ) :
-                        # cropped_image = img[1].copy()[boxY:boxY + boxH, boxX:boxX + boxW]
-                        # removing pole 
                         filteredCnts.append(c)
-                        # car_letters.append((cropped_image,boxX))
-                        # cv.rectangle( img[1], (boxX, boxY), (boxX + boxW, boxY + boxH), (0, 255, 0), 1)
-                        # cv.putText(img[1], f"Area: {area}", (boxX, boxY + boxH + 10), cv.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 0), 1)
         
         
         #  can be edited to get better results by merging only the contours which is intersecting in y axis
@@ -392,21 +376,8 @@ def extractChars(img):
             print(len(car_letters))
             flag = 0
         
-        cv.line(img[1], (0,img[1].shape[0]//2), ((img[1].shape[1],img[1].shape[0]//2,)), (255,0,0), 1)
-        cv.line(white, (0,white.shape[0]//2), ((white.shape[1],white.shape[0]//2,)), (255,0,0), 1)
-        # show_images([img[1],white])
         return [img[1],flag]
 
-# def download_image(url):
-#     response = requests.get(url)
-#     if response.status_code == 200:
-#         img = cv.imdecode(np.frombuffer(response.content, np.uint8), cv.IMREAD_COLOR)
-#         return img
-#     else:
-#         print(f"Failed to download image from {url}")
-#         return None
-
-# Replace 'your_image_url' with the actual URL of the image you want to process
 
 def process_image(image):
     global car_letters

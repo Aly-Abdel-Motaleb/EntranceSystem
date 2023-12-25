@@ -4,12 +4,9 @@ import imutils
 import numpy as np
 import pandas as pd 
 from joblib import load
-
 from skimage.filters import threshold_local
 from skimage import measure
 from skimage.feature import hog
-import os
-# import requests
 
 
 
@@ -260,7 +257,6 @@ def enhance_plate(plate_img):
                     black_image = cv.bitwise_or(black_image,labelMask)
                 
                     
-    # show_images([black_image,white_image])      
     morph_kern = cv.getStructuringElement(cv.MORPH_RECT, (1,3))
     dilated = cv.dilate(black_image,morph_kern,iterations=2)
     return [dilated,plate_img]

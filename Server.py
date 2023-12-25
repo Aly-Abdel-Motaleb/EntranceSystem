@@ -33,8 +33,6 @@ def upload():
         print(result) 
         processed_image_data = Image.fromarray(plate_img)
 
-    # Convert processed image data to base64 for sending to the frontend
-    # Convert processed image to bytes
         buffered = BytesIO()
         processed_image_data.save(buffered, format="JPEG")
 
@@ -44,11 +42,6 @@ def upload():
         processed_image_base64 = False
     return jsonify({'plate_image': processed_image_base64 , 'result' : result})
 
-# def process(image):
-#     # Placeholder for image processing logic
-#     # In this example, we just convert the image to grayscale
-#     processed_image_data = image.convert('L')
-#     return processed_image_data
 
 if __name__ == '__main__':
     app.run(debug=True)
